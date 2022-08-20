@@ -1,22 +1,13 @@
 import './App.css';
-import {doc, addDoc, getDocs, deleteDoc, updateDoc } from "firebase/firestore";
-import {db, todosCollection} from "./fb";
 import {useEffect, useState} from "react";
+import apiTodos from "./api/firebase/todos";
 
 function App() {
     const [text, setText] = useState("");
     const [todos, setTodos] = useState([]);
     const [disabled, setDisabled] = useState(false);
     const getData = async () => {
-        const querySnapshot = await getDocs(todosCollection);
-        const newTodos = [];
-        querySnapshot.forEach(todo => {
-            newTodos.push({
-                id: todo.id,
-                ...todo.data()
-            });
-        })
-        setTodos(newTodos);
+        setTodos(await apiTodos.getTodos());
     }
 
     useEffect(() => {
@@ -28,24 +19,20 @@ function App() {
             return;
         }
         setDisabled(true);
-        await addDoc(todosCollection, { text, isDone: false });
+        await apiTodos.addTodo(text);
         await getData();
         setText('');
         setDisabled(false);
     }
 
     const deleteTodo = async (id) => {
-        setDisabled(true);
-        await deleteDoc(doc(db, 'todos', id));
+        await apiTodos.deleteTodo(id);
         await getData();
-        setDisabled(false);
     }
 
     const toggleTodo = async (id, isDone) => {
-        setDisabled(true);
-        await updateDoc(doc(db, 'todos', id), { isDone });
+        await apiTodos.toggleTodo(id, isDone);
         await getData();
-        setDisabled(false);
     }
 
     return (
